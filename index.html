@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trucking Tracker - GPS Trip Tracking</title>
+    
+    <!-- PWA Configuration -->
+    <meta name="theme-color" content="#3880ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Trucking Tracker">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+        }
+
+        .app {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: #3880ff;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .content {
+            padding: 1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn {
+            background: #3880ff;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 16px;
+            margin: 4px 0;
+            cursor: pointer;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #3880ff;
+            color: #3880ff;
+        }
+
+        .btn-success {
+            background: #2dd36f;
+        }
+
+        .btn-warning {
+            background: #ffc409;
+        }
+
+        .btn-danger {
+            background: #eb445a;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .trip-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .info-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #3880ff;
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .trip-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .trip-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .trip-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-active { background: #ffc409; color: black; }
+        .status-completed { background: #2dd36f; color: white; }
+        .status-paused { background: #92949c; color: white; }
+
+        .invoice-preview {
+            background: #2dd36f;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        #map {
+            height: 200px;
+            width: 100%;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .gps-status {
+            padding: 8px;
+            border-radius: 4px;
+            margin: 8px 0;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .gps-acquiring { background: #fff3cd; color: #856404; }
+        .gps-active { background: #d1ecf1; color: #0c5460; }
+        .gps-error { background: #f8d7da; color: #721c24; }
+
+        .trip-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .summary-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .summary-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .detail-item {
+            background: rgba(255,255,255,0.2);
+            padding: 0.8rem;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>🚛 Trucking Tracker</h1>
+            <small>Philippine Peso (PHP) Currency</small>
+        </div>
+
+        <div class="content">
+            <!-- Home Screen -->
+            <div id="homeScreen">
+                <div class="card">
+                    <h3>Start New Trip</h3>
+                    <div class="form-group">
+                        <label>Driver</label>
+                        <select id="driverSelect">
+                            <option value="">Select Driver</option>
+                            <option value="jeffrey">Jeffrey Welan</option>
+                            <option value="eric">Eric Mirafuente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle</label>
+                        <select id="vehicleSelect">
+                            <option value="">Select Vehicle</option>
+                            <option value="truck-a">Truck A (ABC123)</option>
+                            <option value="truck-b">Truck B (DEF456)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Destination Address</label>
+                        <input type="text" id="destinationInput" placeholder="Enter destination address">
+                    </div>
+                    <button class="btn" id="startTripBtn">Start Trip with GPS</button>
+                </div>
+
+                <button class="btn btn-outline" id="historyBtn">Trip History</button>
+                <button class="btn btn-outline" id="invoiceBtn">Generate Invoices</button>
+            </div>
+
+            <!-- Active Trip Screen -->
+            <div id="activeTripScreen" class="hidden">
+                <div class="card">
+                    <h3>Active Trip - Live GPS Tracking</h3>
+                    
+                    <div id="gpsStatus" class="gps-status gps-acquiring">
+                        🔍 Acquiring GPS Signal...
+                    </div>
+
+                    <div id="map"></div>
+
+                    <div class="trip-info">
+                        <div class="info-card">
+                            <div class="info-value" id="currentDistance">0.00</div>
+                            <div class="info-label">Distance (km)</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-value" id="currentDuration">0</div>
+                            <div class="info-label">Minutes</div>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-value" id="currentPayment">₱0.00</div>
+                        <div class="info-label">Estimated Payment</div>
+                    </div>
+
+                    <div style="margin: 1rem 0;">
+                        <button class="btn btn-warning" id="pauseBtn">Pause Tracking</button>
+                        <button class="btn btn-danger" id="endTripBtn">End Trip</button>
+                    </div>
+
+                    <div>
+                        <strong>Destination:</strong> <span id="tripDestination"></span><br>
+                        <strong>Started:</strong> <span id="tripStartTime"></span><br>
+                        <strong>Current Speed:</strong> <span id="currentSpeed">0 km/h</span><br>
+                        <strong>Accuracy:</strong> <span id="gpsAccuracy">--</span><br>
+                        <strong>Status:</strong> <span id="tripStatus" class="status-badge status-active">ACTIVE</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trip Summary Screen -->
+            <div id="tripSummaryScreen" class="hidden">
+                <div class="card">
+                    <h3>Trip Completed! 🎉</h3>
+                    
+                    <div class="trip-summary">
+                        <div class="summary-value" id="finalDistance">0.00 km</div>
+                        <div class="summary-label">Total Distance Traveled</div>
+                        
+                        <div class="summary-details">
+                            <div class="detail-item">
+                                <div style="font-size: 1.2rem; font-weight: bold;" id="finalPayment">₱0.00</div>
+                                <div>Payment</div>
+                            </div>
+                            <div class="detail-item">
+                                <div style="font-size: 1.2rem; font-weight: bold;" id="tripDuration">0 min</div>
+                                <div>Duration</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin: 1rem 0;">
+                        <p><strong>Driver:</strong> <span id="summaryDriver"></span></p>
+                        <p><strong>Vehicle:</strong> <span id="summaryVehicle"></span></p>
+                        <p><strong>Destination:</strong> <span id="summaryDestination"></span></p>
+                        <p><strong>Start Time:</strong> <span id="summaryStartTime"></span></p>
+                        <p><strong>End Time:</strong> <span id="summaryEndTime"></span></p>
+                    </div>
+
+                    <button class="btn btn-success" id="printInvoiceBtn">🖨️ Print Trip Invoice</button>
+                    <button class="btn btn-outline" id="backToHomeBtn">Back to Home</button>
+                </div>
+            </div>
+
+            <!-- History Screen -->
+            <div id="historyScreen" class="hidden">
+                <div class="card">
+                    <h3>Trip History</h3>
+                    <div class="trip-list" id="tripList"></div>
+                    <button class="btn btn-outline" id="backFromHistoryBtn">Back to Home</button>
+                </div>
+            </div>
+
+            <!-- Invoice Screen -->
+            <div id="invoiceScreen" class="hidden">
+                <div class="card">
+                    <h3>Generate Weekly Invoice</h3>
+                    <div class="form-group">
+                        <label>Driver</label>
+                        <select id="invoiceDriverSelect">
+                            <option value="jeffrey">Jeffrey Welan</option>
+                            <option value="eric">Eric Mirafuente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Week</label>
+                        <select id="weekSelect">
+                            <option value="2024-w15">Week 15, 2024</option>
+                            <option value="2024-w14">Week 14, 2024</option>
+                        </select>
+                    </div>
+                    <button class="btn" id="generateInvoiceBtn">Generate Invoice</button>
+
+                    <div id="invoicePreview" class="hidden">
+                        <div class="invoice-preview">
+                            <h3>Invoice Generated!</h3>
+                            <p>Total Payment: <strong id="totalPayment">₱0.00</strong></p>
+                            <p>Trips Included: <strong id="tripsCount">0</strong></p>
+                        </div>
+                        <button class="btn btn-success" id="downloadInvoiceBtn">Download PDF</button>
+                    </div>
+
+                    <button class="btn btn-outline" id="backFromInvoiceBtn">Back to Home</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Your complete JavaScript code from the previous version goes here
+        // Make sure it's the corrected version without syntax errors
+        // ... [Insert all your JavaScript code here] ...
+    </script>
+</body>
+</html>
