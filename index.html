@@ -3,389 +3,1736 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trucking Tracker - GPS Trip Tracking</title>
-    
-    <!-- PWA Configuration -->
-    <meta name="theme-color" content="#3880ff">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Trucking Tracker">
-    <link rel="manifest" href="manifest.json">
-    
-    <!-- External Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <title>Metro Manila Trucking Service</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #f8f9fa;
+            background-color: #f5f5f5;
             color: #333;
+            line-height: 1.6;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .app {
-            max-width: 400px;
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            min-height: 100vh;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
 
-        .header {
-            background: #3880ff;
+        header {
+            background: linear-gradient(135deg, #0055A4 0%, #0038A8 50%, #CE1126 100%);
             color: white;
-            padding: 1rem;
-            text-align: center;
-            position: sticky;
-            top: 0;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .logo i {
+            font-size: 1.8rem;
+        }
+
+        .logo span {
+            background: linear-gradient(90deg, #FCD116, #FFFFFF, #FCD116);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 20px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.3s;
+        }
+
+        nav a:hover {
+            opacity: 0.8;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 350px;
+            background-color: white;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
             z-index: 1000;
         }
 
-        .content {
-            padding: 1rem;
-        }
-
-        .card {
-            background: white;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .btn {
-            background: #3880ff;
-            color: white;
-            border: none;
-            padding: 12px 16px;
-            border-radius: 8px;
-            width: 100%;
-            font-size: 16px;
-            margin: 4px 0;
-            cursor: pointer;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid #3880ff;
-            color: #3880ff;
-        }
-
-        .btn-success {
-            background: #2dd36f;
-        }
-
-        .btn-warning {
-            background: #ffc409;
-        }
-
-        .btn-danger {
-            background: #eb445a;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        select, input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-
-        .trip-info {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            text-align: center;
-            margin: 1rem 0;
-        }
-
-        .info-card {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 8px;
-        }
-
-        .info-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #3880ff;
-        }
-
-        .info-label {
-            font-size: 0.8rem;
-            color: #666;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .trip-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .trip-item {
-            padding: 1rem;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .trip-item:last-child {
-            border-bottom: none;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        .status-active { background: #ffc409; color: black; }
-        .status-completed { background: #2dd36f; color: white; }
-        .status-paused { background: #92949c; color: white; }
-
-        .invoice-preview {
-            background: #2dd36f;
-            color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem 0;
+        .map-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
         }
 
         #map {
-            height: 200px;
             width: 100%;
+            height: 100%;
+        }
+
+        .route-controls {
+            margin-bottom: 25px;
+        }
+
+        .route-controls h2 {
+            margin-bottom: 15px;
+            color: #0038A8;
+            font-size: 1.4rem;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
             border-radius: 8px;
-            margin: 1rem 0;
-        }
-
-        .gps-status {
-            padding: 8px;
-            border-radius: 4px;
-            margin: 8px 0;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-
-        .gps-acquiring { background: #fff3cd; color: #856404; }
-        .gps-active { background: #d1ecf1; color: #0c5460; }
-        .gps-error { background: #f8d7da; color: #721c24; }
-
-        .trip-summary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin: 1rem 0;
-            text-align: center;
-        }
-
-        .summary-value {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin: 0.5rem 0;
-        }
-
-        .summary-label {
             font-size: 1rem;
-            opacity: 0.9;
+            transition: border 0.3s, box-shadow 0.3s;
         }
 
-        .summary-details {
+        .input-field:focus {
+            outline: none;
+            border-color: #0038A8;
+            box-shadow: 0 0 0 2px rgba(0, 56, 168, 0.2);
+        }
+
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #0055A4 0%, #0038A8 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 56, 168, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f1f3f4;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e2e4;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+
+        .route-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #0038A8;
+        }
+
+        .route-info h3 {
+            margin-bottom: 10px;
+            color: #0038A8;
+        }
+
+        .route-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .route-details span:first-child {
+            font-weight: 500;
+            color: #555;
+        }
+
+        .route-details span:last-child {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .transport-options {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .transport-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .transport-btn.active {
+            border-color: #0038A8;
+            background-color: #e8f0fe;
+            color: #0038A8;
+        }
+
+        .transport-btn i {
+            font-size: 1.2rem;
+        }
+
+        .saved-routes {
+            margin-top: 25px;
+        }
+
+        .saved-routes h3 {
+            margin-bottom: 15px;
+            color: #0038A8;
+        }
+
+        .saved-route {
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border-left: 4px solid #0038A8;
+        }
+
+        .saved-route:hover {
+            background-color: #e9ecef;
+        }
+
+        .saved-route p {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .saved-route span {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .map-btn {
+            background-color: white;
+            border: none;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .map-btn:hover {
+            background-color: #f5f5f5;
+        }
+
+        footer {
+            background-color: #f8f9fa;
+            padding: 15px 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        .location-status {
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .location-status.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .location-status.error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .location-status.info {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .region-notice {
+            background-color: #e3f2fd;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            color: #0d47a1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .error-message {
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            color: #c62828;
+            display: none;
+        }
+
+        .success-message {
+            background-color: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            color: #2e7d32;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-height: 40vh;
+            }
+            
+            .map-container {
+                height: 60vh;
+            }
+        }
+
+        /* Trucking Service Styles */
+        .trucking-controls {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #28a745;
+        }
+
+        .trucking-controls h3 {
+            margin-bottom: 15px;
+            color: #28a745;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .driver-info {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .driver-select {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+        }
+
+        .truck-select {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+        }
+
+        .trucking-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .trucking-buttons .btn {
+            flex: 1;
+        }
+
+        .invoice-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .invoice-section h3 {
+            margin-bottom: 15px;
+            color: #ffc107;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .invoice-details {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-top: 1rem;
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
-        .detail-item {
-            background: rgba(255,255,255,0.2);
-            padding: 0.8rem;
+        .invoice-detail {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .invoice-detail label {
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .invoice-detail span {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .invoice-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .invoice-actions .btn {
+            flex: 1;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
             border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            color: #0038A8;
+            margin: 0;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .invoice-preview {
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .invoice-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #0038A8;
+        }
+
+        .invoice-header h1 {
+            color: #0038A8;
+            margin-bottom: 5px;
+        }
+
+        .invoice-header p {
+            color: #666;
+        }
+
+        .invoice-company {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .invoice-company div {
+            flex: 1;
+        }
+
+        .invoice-company .from {
+            text-align: left;
+        }
+
+        .invoice-company .to {
+            text-align: right;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .invoice-table th, .invoice-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .invoice-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .invoice-total {
+            text-align: right;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .invoice-footer {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .route-map-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #0038A8;
+        }
+
+        .route-map-section h4 {
+            margin-bottom: 10px;
+            color: #0038A8;
+        }
+
+        .captured-map {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        .captured-map img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .capture-loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .capture-loading i {
+            font-size: 2rem;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="app">
-        <div class="header">
-            <h1>🚛 Trucking Tracker</h1>
-            <small>Philippine Peso (PHP) Currency</small>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-truck"></i>
+                <span>Jeff's Trucking Service</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="#"><i class="fas fa-history"></i> History</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="route-controls">
+                    <h2>Plan Your Route in Metro Manila</h2>
+                    
+                    <div class="region-notice">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Smart search + OpenStreetMap routing</span>
+                    </div>
+                    
+                    <div class="location-status info" id="location-status">
+                        <i class="fas fa-location-dot"></i>
+                        <span>Detecting your location...</span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="start">Starting Point</label>
+                        <input type="text" id="start" class="input-field" placeholder="Enter starting location" value="My Location">
+                        <div class="suggestions" id="start-suggestions"></div>
+                    </div>
+                    <div class="input-group">
+                        <label for="destination">Destination</label>
+                        <input type="text" id="destination" class="input-field" placeholder="Search places in Metro Manila...">
+                        <div class="suggestions" id="destination-suggestions"></div>
+                    </div>
+                    
+                    <div class="error-message" id="error-message"></div>
+                    <div class="success-message" id="success-message"></div>
+                    
+                    <div class="transport-options">
+                        <div class="transport-btn active" data-mode="car">
+                            <i class="fas fa-truck"></i>
+                            <span>Truck</span>
+                        </div>
+                        <div class="transport-btn" data-mode="foot">
+                            <i class="fas fa-walking"></i>
+                            <span>Walk</span>
+                        </div>
+                        <div class="transport-btn" data-mode="bike">
+                            <i class="fas fa-bicycle"></i>
+                            <span>Bike</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn" id="calculate-route">
+                        <i class="fas fa-directions"></i>
+                        Find Route via OSM
+                    </button>
+                    
+                    <div class="loading" id="loading">
+                        <i class="fas fa-spinner"></i> Calculating route via OpenStreetMap...
+                    </div>
+                    
+                    <button class="btn btn-secondary" id="clear-route" style="margin-top: 10px;">
+                        <i class="fas fa-times"></i>
+                        Clear Route
+                    </button>
+                </div>
+
+                <div class="route-info">
+                    <h3>Route Summary</h3>
+                    <div class="route-details">
+                        <span>Distance:</span>
+                        <span id="distance">--</span>
+                    </div>
+                    <div class="route-details">
+                        <span>Duration:</span>
+                        <span id="duration">--</span>
+                    </div>
+                    <div class="route-details">
+                        <span>Route Type:</span>
+                        <span id="route-type">--</span>
+                    </div>
+                </div>
+
+                <div class="trucking-controls">
+                    <h3><i class="fas fa-truck-loading"></i> Trucking Service</h3>
+                    <div class="driver-info">
+                        <select id="driver-select" class="driver-select">
+                            <option value="">Select Driver</option>
+                            <option value="Jeff Welan">Jeff Welan</option>
+                            <option value="Eric Mirafuente">Eric Mirafuente</option>
+                        </select>
+                        <select id="truck-select" class="truck-select">
+                            <option value="">Select Truck</option>
+                            <option value="ABC 1234">Truck 1 - ABC 1234</option>
+                            <option value="DEF 5678">Truck 2 - DEF 5678</option>
+                        </select>
+                    </div>
+                    <div class="trucking-buttons">
+                        <button class="btn btn-success" id="start-tracking">
+                            <i class="fas fa-play"></i>
+                            Start Tracking
+                        </button>
+                        <button class="btn btn-warning" id="stop-tracking" disabled>
+                            <i class="fas fa-stop"></i>
+                            Stop Tracking
+                        </button>
+                    </div>
+                </div>
+
+                <div class="invoice-section">
+                    <h3><i class="fas fa-file-invoice"></i> Invoice Details</h3>
+                    <div class="invoice-details">
+                        <div class="invoice-detail">
+                            <label>Driver:</label>
+                            <span id="invoice-driver">--</span>
+                        </div>
+                        <div class="invoice-detail">
+                            <label>Truck:</label>
+                            <span id="invoice-truck">--</span>
+                        </div>
+                        <div class="invoice-detail">
+                            <label>Distance:</label>
+                            <span id="invoice-distance">-- km</span>
+                        </div>
+                        <div class="invoice-detail">
+                            <label>Base Rate:</label>
+                            <span id="invoice-base-rate">₱2,500.00</span>
+                        </div>
+                        <div class="invoice-detail">
+                            <label>Additional KMs:</label>
+                            <span id="invoice-additional-kms">0 km</span>
+                        </div>
+                        <div class="invoice-detail">
+                            <label>Additional Cost:</label>
+                            <span id="invoice-additional-cost">₱0.00</span>
+                        </div>
+                    </div>
+                    <div class="route-details" style="margin-top: 10px;">
+                        <span>Total Amount:</span>
+                        <span id="invoice-total">₱2,500.00</span>
+                    </div>
+                    <div class="invoice-actions">
+                        <button class="btn btn-success" id="generate-invoice" disabled>
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            Generate Invoice
+                        </button>
+                        <button class="btn btn-secondary" id="print-invoice" disabled>
+                            <i class="fas fa-print"></i>
+                            Print
+                        </button>
+                    </div>
+                </div>
+
+                <div class="saved-routes">
+                    <h3>Popular Manila Destinations</h3>
+                    <div class="saved-route" data-destination="Mall of Asia">
+                        <p>Mall of Asia</p>
+                        <span>Pasay, Metro Manila</span>
+                    </div>
+                    <div class="saved-route" data-destination="Bonifacio Global City">
+                        <p>Bonifacio Global City</p>
+                        <span>Taguig, Metro Manila</span>
+                    </div>
+                    <div class="saved-route" data-destination="Intramuros">
+                        <p>Intramuros</p>
+                        <span>Manila, Metro Manila</span>
+                    </div>
+                    <div class="saved-route" data-destination="Greenhills Shopping Center">
+                        <p>Greenhills Shopping Center</p>
+                        <span>San Juan, Metro Manila</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="map-controls">
+                    <button class="map-btn" id="locate-me" title="Locate Me">
+                        <i class="fas fa-location-arrow"></i>
+                    </button>
+                    <button class="map-btn" id="zoom-in" title="Zoom In">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="map-btn" id="zoom-out" title="Zoom Out">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <div class="content">
-            <!-- Home Screen -->
-            <div id="homeScreen">
-                <div class="card">
-                    <h3>Start New Trip</h3>
-                    <div class="form-group">
-                        <label>Driver</label>
-                        <select id="driverSelect">
-                            <option value="">Select Driver</option>
-                            <option value="jeffrey">Jeffrey Welan</option>
-                            <option value="eric">Eric Mirafuente</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Vehicle</label>
-                        <select id="vehicleSelect">
-                            <option value="">Select Vehicle</option>
-                            <option value="truck-a">Truck A (ABC123)</option>
-                            <option value="truck-b">Truck B (DEF456)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Destination Address</label>
-                        <input type="text" id="destinationInput" placeholder="Enter destination address">
-                    </div>
-                    <button class="btn" id="startTripBtn">Start Trip with GPS</button>
-                </div>
+        <footer>
+            <p>Jeff's Trucking Service &copy; 2023 | Smart Search + OpenStreetMap Routing</p>
+        </footer>
+    </div>
 
-                <button class="btn btn-outline" id="historyBtn">Trip History</button>
-                <button class="btn btn-outline" id="invoiceBtn">Generate Invoices</button>
+    <!-- Invoice Modal -->
+    <div class="modal" id="invoice-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Invoice</h2>
+                <button class="close-modal">&times;</button>
             </div>
-
-            <!-- Active Trip Screen -->
-            <div id="activeTripScreen" class="hidden">
-                <div class="card">
-                    <h3>Active Trip - Live GPS Tracking</h3>
-                    
-                    <div id="gpsStatus" class="gps-status gps-acquiring">
-                        🔍 Acquiring GPS Signal...
-                    </div>
-
-                    <div id="map"></div>
-
-                    <div class="trip-info">
-                        <div class="info-card">
-                            <div class="info-value" id="currentDistance">0.00</div>
-                            <div class="info-label">Distance (km)</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="info-value" id="currentDuration">0</div>
-                            <div class="info-label">Minutes</div>
-                        </div>
-                    </div>
-                    <div class="info-card">
-                        <div class="info-value" id="currentPayment">₱0.00</div>
-                        <div class="info-label">Estimated Payment</div>
-                    </div>
-
-                    <div style="margin: 1rem 0;">
-                        <button class="btn btn-warning" id="pauseBtn">Pause Tracking</button>
-                        <button class="btn btn-danger" id="endTripBtn">End Trip</button>
-                    </div>
-
-                    <div>
-                        <strong>Destination:</strong> <span id="tripDestination"></span><br>
-                        <strong>Started:</strong> <span id="tripStartTime"></span><br>
-                        <strong>Current Speed:</strong> <span id="currentSpeed">0 km/h</span><br>
-                        <strong>Accuracy:</strong> <span id="gpsAccuracy">--</span><br>
-                        <strong>Status:</strong> <span id="tripStatus" class="status-badge status-active">ACTIVE</span>
-                    </div>
+            <div class="modal-body">
+                <div class="invoice-preview" id="invoice-preview">
+                    <!-- Invoice content will be generated here -->
                 </div>
-            </div>
-
-            <!-- Trip Summary Screen -->
-            <div id="tripSummaryScreen" class="hidden">
-                <div class="card">
-                    <h3>Trip Completed! 🎉</h3>
-                    
-                    <div class="trip-summary">
-                        <div class="summary-value" id="finalDistance">0.00 km</div>
-                        <div class="summary-label">Total Distance Traveled</div>
-                        
-                        <div class="summary-details">
-                            <div class="detail-item">
-                                <div style="font-size: 1.2rem; font-weight: bold;" id="finalPayment">₱0.00</div>
-                                <div>Payment</div>
-                            </div>
-                            <div class="detail-item">
-                                <div style="font-size: 1.2rem; font-weight: bold;" id="tripDuration">0 min</div>
-                                <div>Duration</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="margin: 1rem 0;">
-                        <p><strong>Driver:</strong> <span id="summaryDriver"></span></p>
-                        <p><strong>Vehicle:</strong> <span id="summaryVehicle"></span></p>
-                        <p><strong>Destination:</strong> <span id="summaryDestination"></span></p>
-                        <p><strong>Start Time:</strong> <span id="summaryStartTime"></span></p>
-                        <p><strong>End Time:</strong> <span id="summaryEndTime"></span></p>
-                    </div>
-
-                    <button class="btn btn-success" id="printInvoiceBtn">🖨️ Print Trip Invoice</button>
-                    <button class="btn btn-outline" id="backToHomeBtn">Back to Home</button>
-                </div>
-            </div>
-
-            <!-- History Screen -->
-            <div id="historyScreen" class="hidden">
-                <div class="card">
-                    <h3>Trip History</h3>
-                    <div class="trip-list" id="tripList"></div>
-                    <button class="btn btn-outline" id="backFromHistoryBtn">Back to Home</button>
-                </div>
-            </div>
-
-            <!-- Invoice Screen -->
-            <div id="invoiceScreen" class="hidden">
-                <div class="card">
-                    <h3>Generate Weekly Invoice</h3>
-                    <div class="form-group">
-                        <label>Driver</label>
-                        <select id="invoiceDriverSelect">
-                            <option value="jeffrey">Jeffrey Welan</option>
-                            <option value="eric">Eric Mirafuente</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Week</label>
-                        <select id="weekSelect">
-                            <option value="2024-w15">Week 15, 2024</option>
-                            <option value="2024-w14">Week 14, 2024</option>
-                        </select>
-                    </div>
-                    <button class="btn" id="generateInvoiceBtn">Generate Invoice</button>
-
-                    <div id="invoicePreview" class="hidden">
-                        <div class="invoice-preview">
-                            <h3>Invoice Generated!</h3>
-                            <p>Total Payment: <strong id="totalPayment">₱0.00</strong></p>
-                            <p>Trips Included: <strong id="tripsCount">0</strong></p>
-                        </div>
-                        <button class="btn btn-success" id="downloadInvoiceBtn">Download PDF</button>
-                    </div>
-
-                    <button class="btn btn-outline" id="backFromInvoiceBtn">Back to Home</button>
+                <div class="invoice-actions">
+                    <button class="btn btn-success" id="final-print">
+                        <i class="fas fa-print"></i>
+                        Print Invoice
+                    </button>
+                    <button class="btn btn-secondary" id="close-invoice">
+                        <i class="fas fa-times"></i>
+                        Close
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
-        // Your complete JavaScript code from the previous version goes here
-        // Make sure it's the corrected version without syntax errors
-        // ... [Insert all your JavaScript code here] ...
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the map centered on Metro Manila
+            const map = L.map('map').setView([14.5995, 120.9842], 12);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Variables to store current location and route data
+            let userLocation = null;
+            let userMarker = null;
+            let currentRoute = null;
+            let currentMode = 'car';
+            let routeLayer = null;
+            let startMarker = null;
+            let endMarker = null;
+            let searchTimeout = null;
+            let selectedDestination = null;
+            
+            // Trucking service variables
+            let isTracking = false;
+            let trackingInterval = null;
+            let actualRouteLayer = null;
+            let actualRouteCoordinates = [];
+            let actualDistance = 0;
+            let truckMarker = null;
+            let selectedDriver = '';
+            let selectedTruck = '';
+            
+            // OSRM API endpoint
+            const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1';
+            
+            // Predefined coordinates for popular Manila locations
+            const manilaLocations = {
+                "Mall of Asia": { lat: 14.5352, lng: 120.9821 },
+                "Bonifacio Global City": { lat: 14.5539, lng: 121.0502 },
+                "BGC": { lat: 14.5539, lng: 121.0502 },
+                "Intramuros": { lat: 14.5892, lng: 120.9744 },
+                "Greenhills Shopping Center": { lat: 14.6078, lng: 121.0432 },
+                "Makati": { lat: 14.5547, lng: 121.0244 },
+                "Ortigas Center": { lat: 14.5864, lng: 121.0610 },
+                "Quezon City": { lat: 14.6760, lng: 121.0437 },
+                "Manila": { lat: 14.5995, lng: 120.9842 },
+                "Pasay": { lat: 14.5378, lng: 121.0014 },
+                "Taguig": { lat: 14.5176, lng: 121.0509 }
+            };
+
+            // Get user's current location
+            locateUser();
+            
+            // Transport mode selection
+            const transportBtns = document.querySelectorAll('.transport-btn');
+            transportBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    transportBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentMode = this.getAttribute('data-mode');
+                    
+                    if (currentRoute) {
+                        calculateRoute();
+                    }
+                });
+            });
+            
+            // Calculate route button
+            const calculateBtn = document.getElementById('calculate-route');
+            calculateBtn.addEventListener('click', calculateRoute);
+            
+            // Clear route button
+            const clearBtn = document.getElementById('clear-route');
+            clearBtn.addEventListener('click', clearRoute);
+            
+            // Locate me button
+            const locateBtn = document.getElementById('locate-me');
+            locateBtn.addEventListener('click', locateUser);
+            
+            // Zoom buttons
+            document.getElementById('zoom-in').addEventListener('click', () => map.zoomIn());
+            document.getElementById('zoom-out').addEventListener('click', () => map.zoomOut());
+            
+            // Popular destinations
+            const savedRoutes = document.querySelectorAll('.saved-route');
+            savedRoutes.forEach(route => {
+                route.addEventListener('click', function() {
+                    const destination = this.getAttribute('data-destination');
+                    document.getElementById('destination').value = destination;
+                    selectedDestination = {
+                        lat: manilaLocations[destination].lat,
+                        lng: manilaLocations[destination].lng,
+                        name: destination
+                    };
+                    calculateRoute();
+                });
+            });
+            
+            // Trucking service controls
+            const driverSelect = document.getElementById('driver-select');
+            const truckSelect = document.getElementById('truck-select');
+            const startTrackingBtn = document.getElementById('start-tracking');
+            const stopTrackingBtn = document.getElementById('stop-tracking');
+            const generateInvoiceBtn = document.getElementById('generate-invoice');
+            const printInvoiceBtn = document.getElementById('print-invoice');
+            
+            driverSelect.addEventListener('change', updateInvoiceDetails);
+            truckSelect.addEventListener('change', updateInvoiceDetails);
+            
+            startTrackingBtn.addEventListener('click', startTracking);
+            stopTrackingBtn.addEventListener('click', stopTracking);
+            generateInvoiceBtn.addEventListener('click', generateInvoice);
+            printInvoiceBtn.addEventListener('click', printInvoice);
+            
+            // Modal controls
+            const invoiceModal = document.getElementById('invoice-modal');
+            const closeModalBtn = document.querySelector('.close-modal');
+            const closeInvoiceBtn = document.getElementById('close-invoice');
+            const finalPrintBtn = document.getElementById('final-print');
+            
+            closeModalBtn.addEventListener('click', () => invoiceModal.style.display = 'none');
+            closeInvoiceBtn.addEventListener('click', () => invoiceModal.style.display = 'none');
+            finalPrintBtn.addEventListener('click', () => window.print());
+            
+            // Setup autocomplete
+            setupAutocomplete('start');
+            setupAutocomplete('destination');
+            
+            function setupAutocomplete(fieldId) {
+                const input = document.getElementById(fieldId);
+                const suggestions = document.getElementById(fieldId + '-suggestions');
+                
+                input.addEventListener('input', function() {
+                    const query = this.value.trim();
+                    
+                    if (searchTimeout) {
+                        clearTimeout(searchTimeout);
+                    }
+                    
+                    if (query.length < 2) {
+                        suggestions.style.display = 'none';
+                        return;
+                    }
+                    
+                    searchTimeout = setTimeout(() => {
+                        const filtered = Object.keys(manilaLocations).filter(location => 
+                            location.toLowerCase().includes(query.toLowerCase())
+                        );
+                        
+                        displaySuggestions(filtered, fieldId);
+                    }, 300);
+                });
+                
+                document.addEventListener('click', function(e) {
+                    if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+                        suggestions.style.display = 'none';
+                    }
+                });
+            }
+            
+            function displaySuggestions(locations, fieldId) {
+                const suggestions = document.getElementById(fieldId + '-suggestions');
+                suggestions.innerHTML = '';
+                
+                locations.forEach(location => {
+                    const suggestionItem = document.createElement('div');
+                    suggestionItem.className = 'suggestion-item';
+                    suggestionItem.textContent = location;
+                    
+                    suggestionItem.addEventListener('click', function() {
+                        document.getElementById(fieldId).value = location;
+                        suggestions.style.display = 'none';
+                    });
+                    
+                    suggestions.appendChild(suggestionItem);
+                });
+                
+                suggestions.style.display = 'block';
+            }
+            
+            function locateUser() {
+                const locationStatus = document.getElementById('location-status');
+                locationStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detecting your location...';
+                locationStatus.className = 'location-status info';
+                
+                if (!navigator.geolocation) {
+                    locationStatus.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Geolocation not supported';
+                    locationStatus.className = 'location-status error';
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        
+                        userLocation = L.latLng(lat, lng);
+                        map.setView([lat, lng], 13);
+                        
+                        if (userMarker) {
+                            map.removeLayer(userMarker);
+                        }
+                        
+                        userMarker = L.marker([lat, lng])
+                            .addTo(map)
+                            .bindPopup('You are here!')
+                            .openPopup();
+                        
+                        locationStatus.innerHTML = '<i class="fas fa-location-dot"></i> Location detected';
+                        locationStatus.className = 'location-status success';
+                        document.getElementById('start').value = "My Location";
+                    },
+                    function(error) {
+                        locationStatus.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Location access denied';
+                        locationStatus.className = 'location-status error';
+                        userLocation = L.latLng(14.5995, 120.9842);
+                        document.getElementById('start').value = "Manila, Philippines";
+                    }
+                );
+            }
+            
+            function calculateRoute() {
+                const startValue = document.getElementById('start').value;
+                const destinationValue = document.getElementById('destination').value;
+                
+                if (!destinationValue) {
+                    showError('Please enter a destination.');
+                    return;
+                }
+                
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error-message').style.display = 'none';
+                calculateBtn.disabled = true;
+                
+                let startPromise;
+                if (startValue === "My Location" && userLocation) {
+                    startPromise = Promise.resolve({
+                        lat: userLocation.lat,
+                        lng: userLocation.lng,
+                        name: "My Location"
+                    });
+                } else {
+                    startPromise = geocodeLocation(startValue);
+                }
+                
+                let destPromise;
+                if (selectedDestination) {
+                    destPromise = Promise.resolve(selectedDestination);
+                } else if (manilaLocations[destinationValue]) {
+                    destPromise = Promise.resolve({
+                        lat: manilaLocations[destinationValue].lat,
+                        lng: manilaLocations[destinationValue].lng,
+                        name: destinationValue
+                    });
+                } else {
+                    destPromise = geocodeLocation(destinationValue + ', Metro Manila, Philippines');
+                }
+                
+                Promise.all([startPromise, destPromise])
+                    .then(results => {
+                        const startCoords = results[0];
+                        const destCoords = results[1];
+                        
+                        if (!startCoords || !destCoords) {
+                            showError('Could not find locations.');
+                            document.getElementById('loading').style.display = 'none';
+                            calculateBtn.disabled = false;
+                            return;
+                        }
+                        
+                        calculateRouteWithOSRM(startCoords, destCoords);
+                        
+                    }).catch(error => {
+                        showError('Error calculating route.');
+                        document.getElementById('loading').style.display = 'none';
+                        calculateBtn.disabled = false;
+                    });
+            }
+            
+            function calculateRouteWithOSRM(start, destination) {
+                const profile = currentMode === 'car' ? 'driving' : 
+                              currentMode === 'foot' ? 'walking' : 'cycling';
+                const coordinates = `${start.lng},${start.lat};${destination.lng},${destination.lat}`;
+                
+                fetch(`${OSRM_BASE_URL}/${profile}/${coordinates}?overview=full&geometries=geojson`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                            displayOSRMRoute(data.routes[0], start, destination);
+                            showSuccess('Route calculated!');
+                        } else {
+                            throw new Error('No route found');
+                        }
+                    })
+                    .catch(error => {
+                        showError('Routing service unavailable.');
+                        document.getElementById('loading').style.display = 'none';
+                        calculateBtn.disabled = false;
+                    });
+            }
+            
+            function displayOSRMRoute(route, start, destination) {
+                clearRoute();
+                
+                const coordinates = route.geometry.coordinates;
+                const latLngs = coordinates.map(coord => L.latLng(coord[1], coord[0]));
+                
+                routeLayer = L.polyline(latLngs, {
+                    color: '#0038A8',
+                    weight: 6,
+                    opacity: 0.8,
+                    lineJoin: 'round'
+                }).addTo(map);
+                
+                map.fitBounds(routeLayer.getBounds());
+                
+                if (!(start.name === "My Location" && userLocation)) {
+                    startMarker = L.marker([start.lat, start.lng]).addTo(map).bindPopup('Start: ' + start.name);
+                }
+                
+                endMarker = L.marker([destination.lat, destination.lng]).addTo(map).bindPopup('Destination: ' + destination.name);
+                
+                updateRouteInfo(route, start, destination);
+                document.getElementById('loading').style.display = 'none';
+                calculateBtn.disabled = false;
+            }
+            
+            function updateRouteInfo(route, start, destination) {
+                const distance = (route.distance / 1000).toFixed(1);
+                const duration = Math.round(route.duration / 60);
+                
+                document.getElementById('distance').textContent = `${distance} km`;
+                document.getElementById('duration').textContent = `${duration} mins`;
+                document.getElementById('route-type').textContent = currentMode === 'car' ? 'Driving' : 
+                                                                   currentMode === 'foot' ? 'Walking' : 'Bicycling';
+                
+                updateInvoiceDetails();
+            }
+            
+            function geocodeLocation(address) {
+                if (manilaLocations[address]) {
+                    return Promise.resolve({
+                        lat: manilaLocations[address].lat,
+                        lng: manilaLocations[address].lng,
+                        name: address
+                    });
+                }
+                
+                return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            return {
+                                lat: parseFloat(data[0].lat),
+                                lng: parseFloat(data[0].lon),
+                                name: data[0].display_name
+                            };
+                        }
+                        return null;
+                    })
+                    .catch(error => {
+                        return null;
+                    });
+            }
+            
+            function clearRoute() {
+                if (routeLayer) map.removeLayer(routeLayer);
+                if (startMarker) map.removeLayer(startMarker);
+                if (endMarker) map.removeLayer(endMarker);
+                
+                document.getElementById('distance').textContent = '--';
+                document.getElementById('duration').textContent = '--';
+                document.getElementById('route-type').textContent = '--';
+                document.getElementById('error-message').style.display = 'none';
+            }
+            
+            function showError(message) {
+                const errorElement = document.getElementById('error-message');
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+            
+            function showSuccess(message) {
+                const successElement = document.getElementById('success-message');
+                successElement.textContent = message;
+                successElement.style.display = 'block';
+            }
+            
+            // Trucking Service Functions
+            function startTracking() {
+                const driver = driverSelect.value;
+                const truck = truckSelect.value;
+                
+                if (!driver || !truck) {
+                    showError('Please select driver and truck.');
+                    return;
+                }
+                
+                if (!userLocation) {
+                    showError('Unable to determine location.');
+                    return;
+                }
+                
+                selectedDriver = driver;
+                selectedTruck = truck;
+                isTracking = true;
+                actualRouteCoordinates = [userLocation];
+                actualDistance = 0;
+                
+                startTrackingBtn.disabled = true;
+                stopTrackingBtn.disabled = false;
+                driverSelect.disabled = true;
+                truckSelect.disabled = true;
+                
+                if (truckMarker) map.removeLayer(truckMarker);
+                
+                truckMarker = L.marker([userLocation.lat, userLocation.lng]).addTo(map).bindPopup(`${driver} - ${truck}`);
+                
+                if (actualRouteLayer) map.removeLayer(actualRouteLayer);
+                
+                actualRouteLayer = L.polyline([userLocation], {
+                    color: '#28a745',
+                    weight: 4,
+                    opacity: 0.8
+                }).addTo(map);
+                
+                trackingInterval = setInterval(updateTracking, 5000);
+                showSuccess(`Tracking started for ${driver}`);
+            }
+            
+            function updateTracking() {
+                if (!isTracking) return;
+                
+                const lastPosition = actualRouteCoordinates[actualRouteCoordinates.length - 1];
+                
+                if (selectedDestination && actualRouteCoordinates.length < 10) {
+                    const destLat = selectedDestination.lat;
+                    const destLng = selectedDestination.lng;
+                    
+                    const latDiff = destLat - lastPosition.lat;
+                    const lngDiff = destLng - lastPosition.lng;
+                    
+                    const newLat = lastPosition.lat + (latDiff / 10);
+                    const newLng = lastPosition.lng + (lngDiff / 10);
+                    
+                    const newPosition = L.latLng(newLat, newLng);
+                    actualRouteCoordinates.push(newPosition);
+                    
+                    truckMarker.setLatLng(newPosition);
+                    actualRouteLayer.setLatLngs(actualRouteCoordinates);
+                    
+                    actualDistance = calculateRouteDistance(actualRouteCoordinates);
+                    updateInvoiceDetails();
+                    
+                    const distanceToDestination = map.distance(newPosition, L.latLng(destLat, destLng));
+                    if (distanceToDestination < 100) {
+                        stopTracking();
+                        showSuccess('Destination reached!');
+                    }
+                }
+            }
+            
+            function calculateRouteDistance(coordinates) {
+                let totalDistance = 0;
+                for (let i = 1; i < coordinates.length; i++) {
+                    totalDistance += map.distance(coordinates[i-1], coordinates[i]);
+                }
+                return totalDistance / 1000;
+            }
+            
+            function stopTracking() {
+                isTracking = false;
+                
+                if (trackingInterval) {
+                    clearInterval(trackingInterval);
+                    trackingInterval = null;
+                }
+                
+                startTrackingBtn.disabled = false;
+                stopTrackingBtn.disabled = true;
+                driverSelect.disabled = false;
+                truckSelect.disabled = false;
+                generateInvoiceBtn.disabled = false;
+                printInvoiceBtn.disabled = false;
+                
+                showSuccess('Tracking stopped. Ready for invoice.');
+            }
+            
+            function updateInvoiceDetails() {
+                document.getElementById('invoice-driver').textContent = selectedDriver || '--';
+                document.getElementById('invoice-truck').textContent = selectedTruck || '--';
+                
+                const distanceElement = document.getElementById('distance');
+                const distance = isTracking || actualDistance > 0 ? 
+                    actualDistance.toFixed(1) : 
+                    (distanceElement.textContent === '--' ? 0 : parseFloat(distanceElement.textContent));
+                
+                document.getElementById('invoice-distance').textContent = `${distance} km`;
+                
+                const baseRate = 2500;
+                let additionalKms = 0;
+                let additionalCost = 0;
+                
+                if (distance > 1) {
+                    additionalKms = Math.ceil(distance - 1);
+                    additionalCost = additionalKms * 1000;
+                }
+                
+                const totalAmount = baseRate + additionalCost;
+                
+                document.getElementById('invoice-additional-kms').textContent = `${additionalKms} km`;
+                document.getElementById('invoice-additional-cost').textContent = `₱${additionalCost.toFixed(2)}`;
+                document.getElementById('invoice-total').textContent = `₱${totalAmount.toFixed(2)}`;
+            }
+            
+            function generateInvoice() {
+                if (!selectedDriver || !selectedTruck) {
+                    showError('Please select driver and truck first.');
+                    return;
+                }
+
+                // Show loading state in modal
+                const invoicePreview = document.getElementById('invoice-preview');
+                invoicePreview.innerHTML = `
+                    <div class="capture-loading">
+                        <i class="fas fa-camera fa-spin"></i>
+                        <p>Preparing map capture...</p>
+                    </div>
+                `;
+                invoiceModal.style.display = 'flex';
+
+                // Ensure map is properly positioned and rendered
+                if (routeLayer) {
+                    map.fitBounds(routeLayer.getBounds(), { 
+                        padding: [30, 30],
+                        maxZoom: 15
+                    });
+                }
+
+                // Force a map redraw
+                map.invalidateSize();
+
+                // Wait for map to stabilize, tiles to load, and ensure proper rendering
+                setTimeout(() => {
+                    // Force another redraw to ensure everything is positioned correctly
+                    map.invalidateSize();
+                    
+                    // Use the enhanced capture method
+                    captureMapScreenshotEnhanced().then(mapImageUrl => {
+                        displayInvoiceWithMap(mapImageUrl);
+                    }).catch(error => {
+                        console.error('All capture methods failed:', error);
+                        displayInvoiceWithMap(null);
+                    });
+                }, 2000);
+            }
+
+            function captureMapScreenshot() {
+                return new Promise((resolve, reject) => {
+                    // Get the map container
+                    const mapContainer = document.getElementById('map');
+                    
+                    // Force a reflow and ensure map is visible
+                    mapContainer.style.visibility = 'visible';
+                    mapContainer.style.opacity = '1';
+                    
+                    // Use html2canvas with better configuration
+                    html2canvas(mapContainer, {
+                        useCORS: true,
+                        allowTaint: true,
+                        scale: 1,
+                        logging: false,
+                        backgroundColor: '#ffffff',
+                        width: mapContainer.offsetWidth,
+                        height: mapContainer.offsetHeight,
+                        onclone: function(clonedDoc) {
+                            // Ensure the cloned map is properly rendered
+                            const clonedMap = clonedDoc.getElementById('map');
+                            if (clonedMap) {
+                                clonedMap.style.visibility = 'visible';
+                                clonedMap.style.opacity = '1';
+                                // Force Leaflet to redraw
+                                const leafletContainer = clonedMap.querySelector('.leaflet-container');
+                                if (leafletContainer) {
+                                    leafletContainer.style.visibility = 'visible';
+                                    leafletContainer.style.opacity = '1';
+                                }
+                            }
+                        }
+                    }).then(canvas => {
+                        // Convert canvas to data URL
+                        const mapImageUrl = canvas.toDataURL('image/png');
+                        resolve(mapImageUrl);
+                    }).catch(reject);
+                });
+            }
+
+            function captureMapScreenshotAlternative() {
+                return new Promise((resolve, reject) => {
+                    // Create a temporary container for capture
+                    const captureContainer = document.createElement('div');
+                    captureContainer.style.width = '800px';
+                    captureContainer.style.height = '500px';
+                    captureContainer.style.position = 'fixed';
+                    captureContainer.style.left = '-9999px';
+                    captureContainer.style.top = '-9999px';
+                    captureContainer.style.zIndex = '-1000';
+                    captureContainer.style.background = 'white';
+                    document.body.appendChild(captureContainer);
+
+                    // Create a temporary map with the same view and layers
+                    const tempMap = L.map(captureContainer).setView(map.getCenter(), map.getZoom());
+                    
+                    // Add the same tile layer
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: ''
+                    }).addTo(tempMap);
+
+                    // Wait for tiles to load
+                    setTimeout(() => {
+                        try {
+                            // Add the route to the temporary map
+                            if (routeLayer) {
+                                const coordinates = routeLayer.getLatLngs();
+                                L.polyline(coordinates, {
+                                    color: '#0038A8',
+                                    weight: 6,
+                                    opacity: 0.8,
+                                    lineJoin: 'round'
+                                }).addTo(tempMap);
+                            }
+
+                            // Add start and end markers
+                            if (startMarker) {
+                                const startLatLng = startMarker.getLatLng();
+                                L.marker(startLatLng).addTo(tempMap);
+                            }
+
+                            if (endMarker) {
+                                const endLatLng = endMarker.getLatLng();
+                                L.marker(endLatLng).addTo(tempMap);
+                            }
+
+                            // Fit bounds to show entire route
+                            if (routeLayer) {
+                                tempMap.fitBounds(routeLayer.getBounds(), { padding: [20, 20] });
+                            }
+
+                            // Wait for map to render
+                            setTimeout(() => {
+                                html2canvas(captureContainer, {
+                                    useCORS: true,
+                                    scale: 1,
+                                    logging: false,
+                                    backgroundColor: '#ffffff',
+                                    width: 800,
+                                    height: 500
+                                }).then(canvas => {
+                                    const mapImageUrl = canvas.toDataURL('image/png');
+                                    
+                                    // Clean up
+                                    tempMap.remove();
+                                    document.body.removeChild(captureContainer);
+                                    
+                                    resolve(mapImageUrl);
+                                }).catch(error => {
+                                    // Clean up on error
+                                    tempMap.remove();
+                                    document.body.removeChild(captureContainer);
+                                    reject(error);
+                                });
+                            }, 1000);
+                        } catch (error) {
+                            tempMap.remove();
+                            document.body.removeChild(captureContainer);
+                            reject(error);
+                        }
+                    }, 500);
+                });
+            }
+
+            function captureMapScreenshotEnhanced() {
+                return new Promise((resolve, reject) => {
+                    // First try the direct capture
+                    captureMapScreenshot().then(resolve).catch(error1 => {
+                        console.log('Direct capture failed, trying alternative method:', error1);
+                        // If direct capture fails, try the alternative method
+                        captureMapScreenshotAlternative().then(resolve).catch(error2 => {
+                            console.log('Alternative capture also failed:', error2);
+                            reject(new Error('Both capture methods failed'));
+                        });
+                    });
+                });
+            }
+
+            function displayInvoiceWithMap(mapImageUrl) {
+                const invoicePreview = document.getElementById('invoice-preview');
+                const distance = document.getElementById('invoice-distance').textContent;
+                const totalAmount = document.getElementById('invoice-total').textContent;
+
+                const now = new Date();
+                const dateString = now.toLocaleDateString('en-PH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                let mapSection = '';
+                if (mapImageUrl) {
+                    mapSection = `
+                        <div class="route-map-section">
+                            <h4><i class="fas fa-route"></i> Route Map</h4>
+                            <div class="captured-map">
+                                <img src="${mapImageUrl}" alt="Captured Route Map" style="width: 100%; height: 100%; object-fit: contain;">
+                            </div>
+                            <p><small>Actual route taken by ${selectedDriver} in ${selectedTruck} - Total distance: ${distance}</small></p>
+                        </div>
+                    `;
+                } else {
+                    mapSection = `
+                        <div class="route-map-section">
+                            <h4><i class="fas fa-route"></i> Route Map</h4>
+                            <div class="captured-map">
+                                <div style="text-align: center; color: #666; padding: 20px;">
+                                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                                    <p>Map capture unavailable</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                invoicePreview.innerHTML = `
+                    <div class="invoice-header">
+                        <h1>INVOICE</h1>
+                        <p>Jeff's Trucking Service</p>
+                        <p>Date: ${dateString}</p>
+                        <p>Invoice #: ${generateInvoiceNumber()}</p>
+                    </div>
+                    
+                    <div class="invoice-company">
+                        <div class="from">
+                            <strong>From:</strong><br>
+                            Jeff's Trucking Service<br>
+                            Manila, Philippines<br>
+                            Phone: (02) 1234-5678<br>
+                            Email: info@manilatrucking.com
+                        </div>
+                        <div class="to">
+                            <strong>To:</strong><br>
+                            Client Name<br>
+                            Client Address<br>
+                            Metro Manila, Philippines
+                        </div>
+                    </div>
+                    
+                    <table class="invoice-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Details</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Trucking Service</td>
+                                <td>Driver: ${selectedDriver}<br>Truck: ${selectedTruck}<br>Distance: ${distance}</td>
+                                <td>${totalAmount}</td>
+                            </tr>
+                            <tr>
+                                <td>Base Rate</td>
+                                <td>First kilometer</td>
+                                <td>₱2,500.00</td>
+                            </tr>
+                            <tr>
+                                <td>Additional Distance</td>
+                                <td>${document.getElementById('invoice-additional-kms').textContent} @ ₱1,000.00/km</td>
+                                <td>${document.getElementById('invoice-additional-cost').textContent}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="invoice-total">
+                        Total: ${totalAmount}
+                    </div>
+                    
+                    ${mapSection}
+                    
+                    <div class="invoice-footer">
+                        <p>Thank you for your business!</p>
+                        <p>Routes are calculated using OpenStreetMap data</p>
+                    </div>
+                `;
+            }
+
+            function generateInvoiceNumber() {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                return `INV-${year}${month}${day}-${random}`;
+            }
+
+            function printInvoice() {
+                generateInvoice();
+            }
+        });
     </script>
 </body>
 </html>
